@@ -3,10 +3,7 @@ package org.example;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 
 public class CalculatorGUI {
@@ -35,7 +32,7 @@ public class CalculatorGUI {
         JScrollPane scrollPane = new JScrollPane(historyTextArea); // Добавление прокручиваемой панели
 
         JLabel loglabel = new JLabel("Логические операции");
-        JLabel enterOne = new JLabel("<html>Введите первое число (если вы решили использовать<br> операцию NOT, то необходимо в это поле вводить true или false)<html>:");
+        JLabel enterOne = new JLabel("<html>Введите первое число (если вы решили использовать<br> операцию NOT, то необходимо вводить число в первое поле)<html>:");
         JTextField num1 = new JTextField();
 
         JLabel enterTwo = new JLabel("Введите второе число:");
@@ -102,22 +99,9 @@ public class CalculatorGUI {
                         }
                     }
                     bufferedReader.close();
-
-                    // Добавление новой записи в файл и в поле истории
-                    FileWriter writer = new FileWriter("history.csv", true);
-                    int number = Integer.parseInt(inputNum);
-                    int numSys = Integer.parseInt(selectedSystem);
-                    String result = transform(number, numSys);
-
-                    // Добавление данных в файл с использованием разделителя и кавычек
-                    String record = String.format("\"%d\";\"%d\";\"%s\"\n", number, numSys, result);
-                    writer.write(record);
-                    writer.close();
-
-                    // Добавление записи в список
-                    lines.add(String.format("\"%d\";\"%d\";\"%s\"", number, numSys, result));
-
+                    String result = Calculator.transform(inputNum, selectedSystem);
                     resultField.setText(result);
+                    lines.add(FileLogger.logger(inputNum, selectedSystem, result));
                     historyTextArea.setText(String.join("\n", lines));
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -159,12 +143,12 @@ public class CalculatorGUI {
                     FileWriter writer = new FileWriter("history.csv", true);
 
                     // Добавление данных в файл с использованием разделителя и кавычек
-                    String record = String.format("\"%d\";\"%d\";\"%s\"\n", num1, num2, result);
+                    String record = String.format("\"%s\";\"%s\";\"%s\";\"%s\"\n", number1, "and" ,number2, result);
                     writer.write(record);
                     writer.close();
 
                     // Добавление записи в список
-                    lines.add(String.format("\"%d\";\"%d\";\"%s\"", num2, num1, result));
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "and" ,number2, result));
                     historyTextArea.setText(String.join("\n", lines));
 
                 } catch (NumberFormatException ex) {
@@ -187,8 +171,38 @@ public class CalculatorGUI {
                     int op2 = Integer.parseInt(number2);
                     int result = op1 | op2;
                     logresult.setText(String.valueOf(result));
+
+                    // Ограничение на 20 последних записей
+                    FileReader fileReader = new FileReader("history.csv");
+                    BufferedReader bufferedReader = new BufferedReader(fileReader);
+                    String line;
+                    ArrayList<String> lines = new ArrayList<>();
+                    while ((line = bufferedReader.readLine()) != null) {
+                        if (lines.size() < 19) {
+                            lines.add(line);
+                        } else {
+                            lines.remove(lines.size() - 19);
+                            lines.add(line);
+                        }
+                    }
+                    bufferedReader.close();
+
+                    // Добавление новой записи в файл и в поле истории
+                    FileWriter writer = new FileWriter("history.csv", true);
+
+                    // Добавление данных в файл с использованием разделителя и кавычек
+                    String record = String.format("\"%s\";\"%s\";\"%s\";\"%s\"\n", number1, "or" ,number2, result);
+                    writer.write(record);
+                    writer.close();
+
+                    // Добавление записи в список
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "or" ,number2, result));
+                    historyTextArea.setText(String.join("\n", lines));
+
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
                 }
             }
         });
@@ -204,8 +218,37 @@ public class CalculatorGUI {
                     int op2 = Integer.parseInt(number2);
                     int result = op1 ^ op2;
                     logresult.setText(String.valueOf(result));
+                    // Ограничение на 20 последних записей
+                    FileReader fileReader = new FileReader("history.csv");
+                    BufferedReader bufferedReader = new BufferedReader(fileReader);
+                    String line;
+                    ArrayList<String> lines = new ArrayList<>();
+                    while ((line = bufferedReader.readLine()) != null) {
+                        if (lines.size() < 19) {
+                            lines.add(line);
+                        } else {
+                            lines.remove(lines.size() - 19);
+                            lines.add(line);
+                        }
+                    }
+                    bufferedReader.close();
+
+                    // Добавление новой записи в файл и в поле истории
+                    FileWriter writer = new FileWriter("history.csv", true);
+
+                    // Добавление данных в файл с использованием разделителя и кавычек
+                    String record = String.format("\"%s\";\"%s\";\"%s\";\"%s\"\n", number1, "xor" ,number2, result);
+                    writer.write(record);
+                    writer.close();
+
+                    // Добавление записи в список
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "xor" ,number2, result));
+                    historyTextArea.setText(String.join("\n", lines));
+
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
                 }
             }
         });
@@ -216,11 +259,38 @@ public class CalculatorGUI {
             public void actionPerformed(ActionEvent e) {
                 String number = num1.getText();
                 try {
-                    boolean op = Boolean.parseBoolean(number);
-                    boolean result = !op;
+                    int op = Integer.parseInt(number);
+                    int result = ~op;
                     logresult.setText(String.valueOf(result));
+                    // Ограничение на 20 последних записей
+                    FileReader fileReader = new FileReader("history.csv");
+                    BufferedReader bufferedReader = new BufferedReader(fileReader);
+                    String line;
+                    ArrayList<String> lines = new ArrayList<>();
+                    while ((line = bufferedReader.readLine()) != null) {
+                        if (lines.size() < 19) {
+                            lines.add(line);
+                        } else {
+                            lines.remove(lines.size() - 19);
+                            lines.add(line);
+                        }
+                    }
+                    bufferedReader.close();
+
+                    // Добавление новой записи в файл и в поле истории
+                    FileWriter writer = new FileWriter("history.csv", true);
+
+                    // Добавление данных в файл с использованием разделителя и кавычек
+                    String record = String.format("\"%s\";\"%s\";\"%s\"\n", "not" ,number, result);
+                    writer.write(record);
+                    writer.close();
+                    // Добавление записи в список
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\"", "not" ,number, result));
+                    historyTextArea.setText(String.join("\n", lines));
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
                 }
             }
         });
@@ -250,22 +320,4 @@ public class CalculatorGUI {
         window.add(notButton);
     }
 
-    // Метод для перевода числа в выбранную систему счисления
-    private String transform(int number, int numSys) {
-        String result;
-        switch (numSys) {
-            case 2:
-                result = Integer.toBinaryString(number);
-                break;
-            case 8:
-                result = Integer.toOctalString(number);
-                break;
-            case 16:
-                result = Integer.toHexString(number);
-                break;
-            default:
-                result = "Неизвестная система счисления";
-        }
-        return result;
-    }
 }
