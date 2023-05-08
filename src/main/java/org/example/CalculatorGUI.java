@@ -8,18 +8,26 @@ import java.util.ArrayList;
 
 public class CalculatorGUI {
     private static final String[] SYSTEMS = {"2", "8", "16"};
-
     private final JFrame window;
-    private final JTextField numField;
-    private final JTextField resultField;
-    private final JComboBox<String> systemComboBox;
+    private JTextField numField;
+    private JTextField resultField;
+    private JComboBox<String> systemComboBox;
+    private final FileLogger fileLogger;
+    private final Calculator calculator;
 
     public CalculatorGUI() {
+        fileLogger = new FileLogger();
+        calculator = new Calculator(fileLogger);
         window = new JFrame("Калькулятор");
         window.setSize(1000, 1000);
         window.setLayout(null);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        initGui();
+        window.setVisible(true);
+    }
+
+    private void initGui() {
         JLabel enterLabel = new JLabel("Введите число:");
         numField = new JTextField();
         JLabel systemLabel = new JLabel("Выберите систему счисления:");
@@ -42,7 +50,7 @@ public class CalculatorGUI {
         JTextField logresult = new JTextField();
 
 
-        //Размещение компонентов для перевода
+        // Размещение компонентов
         enterLabel.setBounds(1, 0, 100, 20);
         numField.setBounds(1, 30, 100, 20);
         systemLabel.setBounds(1, 35, 300, 75);
@@ -60,28 +68,29 @@ public class CalculatorGUI {
         JButton xorButton = new JButton("XOR");
         JButton notButton = new JButton("NOT");
 
-
         //Размещение компонентов для логических выраженний
-        loglabel.setBounds(350,0,200,20);
+        loglabel.setBounds(350, 0, 200, 20);
 
-        enterOne.setBounds(320,30,200,65);
-        num1.setBounds(365,100,100,20);
+        enterOne.setBounds(320, 30, 200, 65);
+        num1.setBounds(365, 100, 100, 20);
 
-        enterTwo.setBounds(350,120,200,20);
-        num2.setBounds(365,150,100,20);
+        enterTwo.setBounds(350, 120, 200, 20);
+        num2.setBounds(365, 150, 100, 20);
 
-        logres.setBounds(380,290,200,20);
-        logresult.setBounds(365,310,100,20);
+        logres.setBounds(380, 290, 200, 20);
+        logresult.setBounds(365, 310, 100, 20);
 
         andButton.setBounds(330, 180, 70, 40);
         orButton.setBounds(430, 180, 70, 40);
         xorButton.setBounds(330, 240, 70, 40);
         notButton.setBounds(430, 240, 70, 40);
 
-        //Слушатель для кнопки перевода
+
+        // Слушатель для кнопки перевода
         calcButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
                 String inputNum = numField.getText();
                 String selectedSystem = (String) systemComboBox.getSelectedItem();
                 try {
@@ -99,9 +108,10 @@ public class CalculatorGUI {
                         }
                     }
                     bufferedReader.close();
-                    String result = Calculator.transform(inputNum, selectedSystem);
+
+                    String result = calculator.transform(Integer.parseInt(inputNum), Integer.parseInt(selectedSystem));
                     resultField.setText(result);
-                    lines.add(FileLogger.logger(inputNum, selectedSystem, result));
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\"\n", inputNum, selectedSystem, result));
                     historyTextArea.setText(String.join("\n", lines));
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -112,17 +122,16 @@ public class CalculatorGUI {
         });
 
 
-        //Слушатель для кнопки AND
+        // Слушатель для кнопки AND
         andButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String number1 = num1.getText();
                 String number2 = num2.getText();
+                String operation = "AND";
                 try {
-                    int op1 = Integer.parseInt(number1);
-                    int op2 = Integer.parseInt(number2);
-                    int result = op1 & op2;
-                    logresult.setText(String.valueOf(result));
+                    String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
+                    logresult.setText(result);
 
                     // Ограничение на 20 последних записей
                     FileReader fileReader = new FileReader("history.csv");
@@ -139,38 +148,34 @@ public class CalculatorGUI {
                     }
                     bufferedReader.close();
 
-                    // Добавление новой записи в файл и в поле истории
-                    FileWriter writer = new FileWriter("history.csv", true);
-
-                    // Добавление данных в файл с использованием разделителя и кавычек
-                    String record = String.format("\"%s\";\"%s\";\"%s\";\"%s\"\n", number1, "and" ,number2, result);
-                    writer.write(record);
-                    writer.close();
+                    fileLogger.loggerLog(number1, number2, result, operation);
 
                     // Добавление записи в список
-                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "and" ,number2, result));
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "АND", number2, result));
                     historyTextArea.setText(String.join("\n", lines));
 
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
-                }  catch (IOException ex) {
+                } catch (IOException ex) {
                     JOptionPane.showMessageDialog(window, "Ошибка при записи в файл", "Ошибка", JOptionPane.ERROR_MESSAGE);
-            }
+                }
 
             }
         });
 
-        //Слушатель для кнопки OR
+
+        // Слушатель для кнопки OR
         orButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String number1 = num1.getText();
                 String number2 = num2.getText();
                 try {
-                    int op1 = Integer.parseInt(number1);
-                    int op2 = Integer.parseInt(number2);
-                    int result = op1 | op2;
-                    logresult.setText(String.valueOf(result));
+
+                    String operation = "OR";
+                    String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
+                    logresult.setText(result);
+
 
                     // Ограничение на 20 последних записей
                     FileReader fileReader = new FileReader("history.csv");
@@ -187,16 +192,10 @@ public class CalculatorGUI {
                     }
                     bufferedReader.close();
 
-                    // Добавление новой записи в файл и в поле истории
-                    FileWriter writer = new FileWriter("history.csv", true);
-
-                    // Добавление данных в файл с использованием разделителя и кавычек
-                    String record = String.format("\"%s\";\"%s\";\"%s\";\"%s\"\n", number1, "or" ,number2, result);
-                    writer.write(record);
-                    writer.close();
+                    fileLogger.loggerLog(number1, number2, result, operation);
 
                     // Добавление записи в список
-                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "or" ,number2, result));
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "OR", number2, result));
                     historyTextArea.setText(String.join("\n", lines));
 
                 } catch (NumberFormatException ex) {
@@ -207,17 +206,17 @@ public class CalculatorGUI {
             }
         });
 
-        //Слушатель для кнопки XOR
+
+        // Слушатель для кнопки XOR
         xorButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String number1 = num1.getText();
                 String number2 = num2.getText();
                 try {
-                    int op1 = Integer.parseInt(number1);
-                    int op2 = Integer.parseInt(number2);
-                    int result = op1 ^ op2;
-                    logresult.setText(String.valueOf(result));
+                    String operation = "XOR";
+                    String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
+                    logresult.setText(result);
                     // Ограничение на 20 последних записей
                     FileReader fileReader = new FileReader("history.csv");
                     BufferedReader bufferedReader = new BufferedReader(fileReader);
@@ -233,16 +232,10 @@ public class CalculatorGUI {
                     }
                     bufferedReader.close();
 
-                    // Добавление новой записи в файл и в поле истории
-                    FileWriter writer = new FileWriter("history.csv", true);
-
-                    // Добавление данных в файл с использованием разделителя и кавычек
-                    String record = String.format("\"%s\";\"%s\";\"%s\";\"%s\"\n", number1, "xor" ,number2, result);
-                    writer.write(record);
-                    writer.close();
+                    fileLogger.loggerLog(number1, number2, result, operation);
 
                     // Добавление записи в список
-                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "xor" ,number2, result));
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "XOR", number2, result));
                     historyTextArea.setText(String.join("\n", lines));
 
                 } catch (NumberFormatException ex) {
@@ -253,15 +246,17 @@ public class CalculatorGUI {
             }
         });
 
-        //Слушатель для кнопки NOT
+
+        // Слушатель для кнопки NOT
         notButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String number = num1.getText();
+                String number1 = num1.getText();
+                String number2 = num1.getText();
                 try {
-                    int op = Integer.parseInt(number);
-                    int result = ~op;
-                    logresult.setText(String.valueOf(result));
+                    String operation = "NOT";
+                    String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
+                    logresult.setText(result);
                     // Ограничение на 20 последних записей
                     FileReader fileReader = new FileReader("history.csv");
                     BufferedReader bufferedReader = new BufferedReader(fileReader);
@@ -277,15 +272,9 @@ public class CalculatorGUI {
                     }
                     bufferedReader.close();
 
-                    // Добавление новой записи в файл и в поле истории
-                    FileWriter writer = new FileWriter("history.csv", true);
-
-                    // Добавление данных в файл с использованием разделителя и кавычек
-                    String record = String.format("\"%s\";\"%s\";\"%s\"\n", "not" ,number, result);
-                    writer.write(record);
-                    writer.close();
+                    fileLogger.loggerLog(number1, number2, result, operation);
                     // Добавление записи в список
-                    lines.add(String.format("\"%s\";\"%s\";\"%s\"", "not" ,number, result));
+                    lines.add(String.format("\"%s\";\"%s\";\"%s\"\n", operation, number1, result));
                     historyTextArea.setText(String.join("\n", lines));
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(window, "Неверный формат числа", "Ошибка", JOptionPane.ERROR_MESSAGE);
@@ -295,6 +284,8 @@ public class CalculatorGUI {
             }
         });
 
+
+        // Добавление компонентов в окно
 
         window.add(enterLabel);
         window.add(numField);
@@ -318,6 +309,7 @@ public class CalculatorGUI {
         window.add(orButton);
         window.add(xorButton);
         window.add(notButton);
-    }
 
+
+    }
 }
