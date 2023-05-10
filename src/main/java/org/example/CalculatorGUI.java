@@ -22,7 +22,6 @@ public class CalculatorGUI {
         window.setSize(1000, 1000);
         window.setLayout(null);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         initGui();
         window.setVisible(true);
     }
@@ -94,21 +93,8 @@ public class CalculatorGUI {
                 String inputNum = numField.getText();
                 String selectedSystem = (String) systemComboBox.getSelectedItem();
                 try {
-                    // Ограничение на 20 последних записей
-                    FileReader fileReader = new FileReader("history.csv");
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
-                    String line;
                     ArrayList<String> lines = new ArrayList<>();
-                    while ((line = bufferedReader.readLine()) != null) {
-                        if (lines.size() < 19) {
-                            lines.add(line);
-                        } else {
-                            lines.remove(lines.size() - 19);
-                            lines.add(line);
-                        }
-                    }
-                    bufferedReader.close();
-
+                    readFile(lines);
                     String result = calculator.transform(Integer.parseInt(inputNum), Integer.parseInt(selectedSystem));
                     resultField.setText(result);
                     lines.add(String.format("\"%s\";\"%s\";\"%s\"\n", inputNum, selectedSystem, result));
@@ -130,25 +116,13 @@ public class CalculatorGUI {
                 String number2 = num2.getText();
                 String operation = "AND";
                 try {
+                    // Ограничение на 20 последних записей
+                    ArrayList<String> lines = new ArrayList<>();
+                    readFile(lines);
+
                     String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
                     logresult.setText(result);
 
-                    // Ограничение на 20 последних записей
-                    FileReader fileReader = new FileReader("history.csv");
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
-                    String line;
-                    ArrayList<String> lines = new ArrayList<>();
-                    while ((line = bufferedReader.readLine()) != null) {
-                        if (lines.size() < 19) {
-                            lines.add(line);
-                        } else {
-                            lines.remove(lines.size() - 19);
-                            lines.add(line);
-                        }
-                    }
-                    bufferedReader.close();
-
-                    fileLogger.loggerLog(number1, number2, result, operation);
 
                     // Добавление записи в список
                     lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "АND", number2, result));
@@ -171,29 +145,11 @@ public class CalculatorGUI {
                 String number1 = num1.getText();
                 String number2 = num2.getText();
                 try {
-
+                    ArrayList<String> lines = new ArrayList<>();
+                    readFile(lines);
                     String operation = "OR";
                     String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
                     logresult.setText(result);
-
-
-                    // Ограничение на 20 последних записей
-                    FileReader fileReader = new FileReader("history.csv");
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
-                    String line;
-                    ArrayList<String> lines = new ArrayList<>();
-                    while ((line = bufferedReader.readLine()) != null) {
-                        if (lines.size() < 19) {
-                            lines.add(line);
-                        } else {
-                            lines.remove(lines.size() - 19);
-                            lines.add(line);
-                        }
-                    }
-                    bufferedReader.close();
-
-                    fileLogger.loggerLog(number1, number2, result, operation);
-
                     // Добавление записи в список
                     lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "OR", number2, result));
                     historyTextArea.setText(String.join("\n", lines));
@@ -214,26 +170,11 @@ public class CalculatorGUI {
                 String number1 = num1.getText();
                 String number2 = num2.getText();
                 try {
+                    ArrayList<String> lines = new ArrayList<>();
+                    readFile(lines);
                     String operation = "XOR";
                     String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
                     logresult.setText(result);
-                    // Ограничение на 20 последних записей
-                    FileReader fileReader = new FileReader("history.csv");
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
-                    String line;
-                    ArrayList<String> lines = new ArrayList<>();
-                    while ((line = bufferedReader.readLine()) != null) {
-                        if (lines.size() < 19) {
-                            lines.add(line);
-                        } else {
-                            lines.remove(lines.size() - 19);
-                            lines.add(line);
-                        }
-                    }
-                    bufferedReader.close();
-
-                    fileLogger.loggerLog(number1, number2, result, operation);
-
                     // Добавление записи в список
                     lines.add(String.format("\"%s\";\"%s\";\"%s\";\"%s\"", number1, "XOR", number2, result));
                     historyTextArea.setText(String.join("\n", lines));
@@ -254,25 +195,11 @@ public class CalculatorGUI {
                 String number1 = num1.getText();
                 String number2 = num1.getText();
                 try {
+                    ArrayList<String> lines = new ArrayList<>();
+                    readFile(lines);
                     String operation = "NOT";
                     String result = calculator.logCalc(Integer.parseInt(number1), Integer.parseInt(number2), operation);
                     logresult.setText(result);
-                    // Ограничение на 20 последних записей
-                    FileReader fileReader = new FileReader("history.csv");
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
-                    String line;
-                    ArrayList<String> lines = new ArrayList<>();
-                    while ((line = bufferedReader.readLine()) != null) {
-                        if (lines.size() < 19) {
-                            lines.add(line);
-                        } else {
-                            lines.remove(lines.size() - 19);
-                            lines.add(line);
-                        }
-                    }
-                    bufferedReader.close();
-
-                    fileLogger.loggerLog(number1, number2, result, operation);
                     // Добавление записи в список
                     lines.add(String.format("\"%s\";\"%s\";\"%s\"\n", operation, number1, result));
                     historyTextArea.setText(String.join("\n", lines));
@@ -311,5 +238,21 @@ public class CalculatorGUI {
         window.add(notButton);
 
 
+    }
+
+    public void readFile(ArrayList<String> lines) throws IOException {
+        // Ограничение на 20 последних записей
+        FileReader fileReader = new FileReader("history.csv");
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            if (lines.size() < 19) {
+                lines.add(line);
+            } else {
+                lines.remove(lines.size() - 19);
+                lines.add(line);
+            }
+        }
+        bufferedReader.close();
     }
 }

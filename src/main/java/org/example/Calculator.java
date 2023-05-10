@@ -30,6 +30,7 @@ public class Calculator {
             default -> throw new IllegalStateException("Ошибка");
 
         };
+        fileLogger.loggerLog(Integer.toString(number1), Integer.toString(number2), Integer.toString(result), operation);
         return Integer.toString(result);
     }
 
